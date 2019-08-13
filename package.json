@@ -1,0 +1,31 @@
+{
+  "name": "audio-clip-identify",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "main": "handler.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "Bill Barrington",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^12.6.2",
+    "@types/sanctuary": "^0.14.2",
+    "alexa-sdk": "^1.0.25",
+    "ask-sdk": "^2.6.0",
+    "assert": "^1.4.1",
+    "aws-sdk": "^2.508.0",
+    "fluture": "^11.0.1",
+    "fluture-sanctuary-types": "^4.0.0",
+    "pos": "^0.4.2",
+    "sanctuary": "^2.0.0",
+    "serverless": "^1.49.0"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0"
+  }
+}
