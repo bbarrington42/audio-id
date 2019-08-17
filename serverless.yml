@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: audio-clip-identify # NOTE: update this with your service name
+service: audio-id # NOTE: update this with your service name
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -22,6 +22,14 @@ provider:
   runtime: nodejs8.10
   stage: dev
   profile: default
+
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - 's3:ListBucket'
+        - 's3:GetObject'
+      Resource: 'arn:aws:s3:::bills-audio-clips/clips/*'
+
 
 # you can overwrite defaults here
 #  stage: dev
@@ -57,11 +65,11 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  madLib:
+  main:
     handler: handler.handler
     events:
       - alexaSkill:
-          appId: amzn1.ask.skill.blah-blah-blah
+          appId: amzn1.ask.skill.03f0f63f-d84e-49a9-8fbd-cb069b642fa6
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
