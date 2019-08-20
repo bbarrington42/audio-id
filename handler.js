@@ -15,6 +15,8 @@ const s3 = new AWS.S3 ();
 const Alexa = require ('alexa-sdk');
 const APP_ID = 'amzn1.ask.skill.03f0f63f-d84e-49a9-8fbd-cb069b642fa6';
 
+const s3Service = require ('./lib/s3-service');
+const getSignedUrlForKey = s3Service.signedUrl (s3) ('getObject') ('bills-audio-clips');
 
 // Takes a Future of array, each element being a response from a listObjectsV2 request and concatenates
 // the elements in each 'Contents' array
@@ -41,8 +43,12 @@ const startModeHandlers =
             console.log (`YesIntent: ${JSON.stringify (this.event)}`);
 
             // todo For now, just play the audio file and quit.
+            // Use a signed URL as all other attempts to access private bucket have failed
+            // todo Consider adding an Expires parameter
+            const signedUrl = getSignedUrlForKey ('clips/blunders.mp3');
 
-            const audioFile = '<audio src="https://bills-audio-clips.s3.amazonaws.com/clips/blunders.mp3" />';
+            const audioFile = `<audio src="${signedUrl}" />`;
+            console.log(`audio html tag: ${audioFile}`);
             try {
                 this.emit (':tell', `${audioFile}`);
             } catch (error) {
@@ -79,4 +85,3 @@ exports.handler = function (event, context) {
     alexa.execute ();
 
 };
-
