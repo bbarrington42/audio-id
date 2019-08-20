@@ -11,6 +11,7 @@ const S = create ({
 
 const AWS = require ('aws-sdk');
 const s3 = new AWS.S3 ();
+const Escape = require('lodash/escape');
 
 const Alexa = require ('alexa-sdk');
 const APP_ID = 'amzn1.ask.skill.03f0f63f-d84e-49a9-8fbd-cb069b642fa6';
@@ -47,13 +48,11 @@ const startModeHandlers =
             // todo Consider adding an Expires parameter
             const signedUrl = getSignedUrlForKey ('clips/blunders.mp3');
 
-            const audioFile = `<audio src="${signedUrl}" />`;
-            console.log(`audio html tag: ${audioFile}`);
-            try {
+            signedUrl.fork (console.error, url => {
+                const audioFile = `<audio src="${Escape(url)}" />`;
+                console.log(`audio tag: ${audioFile}`);
                 this.emit (':tell', `${audioFile}`);
-            } catch (error) {
-                console.log (error);
-            }
+            });
         },
 
         'AMAZON.NoIntent': function () {

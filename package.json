@@ -21,6 +21,7 @@
     "aws-sdk": "^2.508.0",
     "fluture": "^11.0.1",
     "fluture-sanctuary-types": "^4.0.0",
+    "lodash": "^4.17.15",
     "pos": "^0.4.2",
     "sanctuary": "^2.0.0",
     "serverless": "^1.50.0"
