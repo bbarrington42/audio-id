@@ -11,7 +11,6 @@ const S = create ({
 
 const AWS = require ('aws-sdk');
 const s3 = new AWS.S3 ();
-const Escape = require('lodash/escape');
 
 const Alexa = require ('alexa-sdk');
 const APP_ID = 'amzn1.ask.skill.03f0f63f-d84e-49a9-8fbd-cb069b642fa6';
@@ -22,6 +21,23 @@ const getSignedUrlForKey = s3Service.signedUrl (s3) ('getObject') ('bills-audio-
 // Takes a Future of array, each element being a response from a listObjectsV2 request and concatenates
 // the elements in each 'Contents' array
 const getBucketContents = S.map (S.reduce (acc => elem => S.concat (acc) (elem.Contents)) ([]));
+
+// HTML escape
+function escape_HTML(html_str) {
+
+    return html_str.replace(/[&<>"']/g, function (tag) {
+        const chars_to_replace = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            '\'':'&#039;'
+        };
+
+        return chars_to_replace[tag] || tag;
+    });
+}
+
 
 // -----------------------------------------------------
 
@@ -49,7 +65,7 @@ const startModeHandlers =
             const signedUrl = getSignedUrlForKey ('clips/blunders.mp3');
 
             signedUrl.fork (console.error, url => {
-                const audioFile = `<audio src="${Escape(url)}" />`;
+                const audioFile = `<audio src="${escape_HTML(url)}" />`;
                 console.log(`audio tag: ${audioFile}`);
                 this.emit (':tell', `${audioFile}`);
             });
