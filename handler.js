@@ -23,20 +23,17 @@ const getSignedUrlForKey = s3Service.signedUrl (s3) ('getObject') ('bills-audio-
 const getBucketContents = S.map (S.reduce (acc => elem => S.concat (acc) (elem.Contents)) ([]));
 
 // HTML escape
-function escape_HTML(html_str) {
+const escape_HTML = html_str => {
+    const chars_to_replace = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        '\'': '&#039;'
+    };
 
-    return html_str.replace(/[&<>"']/g, function (tag) {
-        const chars_to_replace = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            '\'':'&#039;'
-        };
-
-        return chars_to_replace[tag] || tag;
-    });
-}
+    return html_str.replace (/[&<>"']/g, tag => chars_to_replace[tag] || tag);
+};
 
 
 // -----------------------------------------------------
@@ -65,8 +62,8 @@ const startModeHandlers =
             const signedUrl = getSignedUrlForKey ('clips/blunders.mp3');
 
             signedUrl.fork (console.error, url => {
-                const audioFile = `<audio src="${escape_HTML(url)}" />`;
-                console.log(`audio tag: ${audioFile}`);
+                const audioFile = `<audio src="${escape_HTML (url)}" />`;
+                console.log (`audio tag: ${audioFile}`);
                 this.emit (':tell', `${audioFile}`);
             });
         },
