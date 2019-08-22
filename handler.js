@@ -36,6 +36,8 @@ const escape_HTML = html_str => {
     return html_str.replace (/[&<>"']/g, tag => chars_to_replace[tag] || tag);
 };
 
+const getRandomInt = max => Math.floor(Math.random() * Math.floor(max));
+
 
 // -----------------------------------------------------
 
@@ -57,31 +59,29 @@ const startModeHandlers =
         'AMAZON.YesIntent': function () {
             console.log (`YesIntent: ${JSON.stringify (this.event)}`);
 
-            // Choose a manifest entry at random
             const bucketList = s3Service.listBucket (s3) ('bills-audio-clips', 'manifests');
             const bucketContents = getBucketContents (bucketList);
 
             bucketContents.pipe (Future.chain (manifests => {
-                // todo For now, simply log the contents
-                console.log (`manifests: ${JSON.stringify(manifests)}`);
+                const clips = S.reduce (acc => obj => {
+                    const index = obj.Key.lastIndexOf ('/');
+                    if (index === -1) return acc;
+                    const key = obj.Key.substring (index + 1);
+                    if (!key.endsWith ('.json')) return acc;
+                    return S.append (key.replace('json', 'mp3')) (acc);
+                }) ([]) (manifests);
 
-                return getSignedUrlForKey ('clips/blunders.mp3');
+                console.log (`clips: ${JSON.stringify (clips)}`);
+                // Choose a manifest entry at random
+                const randomIndex = getRandomInt(clips.length);
+                const clip = clips[randomIndex];
+
+                return getSignedUrlForKey (`clips/${clip}`);
             })).pipe (Future.fork (console.error, url => {
                 const audioFile = `<audio src="${escape_HTML (url)}" />`;
                 console.log (`audio tag: ${audioFile}`);
                 this.emit (':tell', `${audioFile}`);
             }));
-            //
-            // // todo For now, just play the audio file and quit.
-            // // Use a signed URL as all other attempts to access private bucket have failed
-            // // todo Consider adding an Expires parameter
-            // const signedUrl = getSignedUrlForKey ('clips/blunders.mp3');
-            //
-            // signedUrl.fork (console.error, url => {
-            //     const audioFile = `<audio src="${escape_HTML (url)}" />`;
-            //     console.log (`audio tag: ${audioFile}`);
-            //     this.emit (':tell', `${audioFile}`);
-            // });
         },
 
         'AMAZON.NoIntent': function () {
