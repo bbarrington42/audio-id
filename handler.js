@@ -36,7 +36,7 @@ const escape_HTML = html_str => {
     return html_str.replace (/[&<>"']/g, tag => chars_to_replace[tag] || tag);
 };
 
-const getRandomInt = max => Math.floor(Math.random() * Math.floor(max));
+const getRandomInt = max => Math.floor (Math.random () * Math.floor (max));
 
 
 // -----------------------------------------------------
@@ -62,26 +62,42 @@ const startModeHandlers =
             const bucketList = s3Service.listBucket (s3) ('bills-audio-clips', 'manifests');
             const bucketContents = getBucketContents (bucketList);
 
-            bucketContents.pipe (Future.chain (manifests => {
-                const clips = S.reduce (acc => obj => {
-                    const index = obj.Key.lastIndexOf ('/');
-                    if (index === -1) return acc;
-                    const key = obj.Key.substring (index + 1);
-                    if (!key.endsWith ('.json')) return acc;
-                    return S.append (key.replace('json', 'mp3')) (acc);
+            const selected = Future.chain (manifests => {
+                console.log (`manifests: ${JSON.stringify(manifests)}`);
+                // Collect all the basenames of the entries
+                const basenames = S.reduce (acc => obj => {
+                    const key = obj.Key;
+                    const start = key.lastIndexOf ('/');
+                    if (start === -1) return acc;
+                    const end = key.lastIndexOf ('.json');
+                    if (end === -1) return acc;
+                    const basename = key.substring (start + 1, end);
+
+                    return S.append (basename) (acc);
                 }) ([]) (manifests);
 
-                console.log (`clips: ${JSON.stringify (clips)}`);
+                console.log (`basenames: ${JSON.stringify (basenames)}`);
                 // Choose a manifest entry at random
-                const randomIndex = getRandomInt(clips.length);
-                const clip = clips[randomIndex];
+                const randomIndex = getRandomInt (basenames.length);
+                const basename = basenames[randomIndex];
 
-                return getSignedUrlForKey (`clips/${clip}`);
-            })).pipe (Future.fork (console.error, url => {
+                console.log (`selected basename: ${basename}`);
+
+                const objectBody = s3Service.getObject (s3) ('bills-audio-clips') (`manifests/${basename}.json`);
+                return Future.map (body => ({Basename: basename, ...JSON.parse (body)})) (objectBody);
+
+            }) (bucketContents);
+
+            const signedUrl = Future.chain (selection => {
+                console.log (`selected: ${JSON.stringify(selection)}`);
+                return getSignedUrlForKey (`clips/${selection.Basename}.mp3`);
+            }) (selected);
+
+            Future.fork (console.error, url => {
                 const audioFile = `<audio src="${escape_HTML (url)}" />`;
                 console.log (`audio tag: ${audioFile}`);
                 this.emit (':tell', `${audioFile}`);
-            }));
+            }) (signedUrl);
         },
 
         'AMAZON.NoIntent': function () {
@@ -113,8 +129,3 @@ exports.handler = function (event, context) {
     alexa.execute ();
 
 };
-
-//
-// const f = Future.resolve(42).pipe(Future.map(v => v/2));
-// console.log(f);
-// f.fork(console.error, console.log);
