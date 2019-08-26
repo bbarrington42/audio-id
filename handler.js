@@ -41,6 +41,7 @@ const getRandomInt = max => Math.floor (Math.random () * Math.floor (max));
 // Get all the basenames from the S3 bucket. The audio clips are stored using the key: 'clips/<basename>.mp3'
 // The manifests are stored using the key: 'manifests/<basename>.json'
 // This MUST be declared the old-fashioned way as it is a 'bound' function
+// todo Rewrite this as a function that doesn't know anything about Futures. It would be called as a parameter to Future.map
 function getBasenames(s3) {
 
     if (this.attributes.basenames) return Future.resolve (this.attributes.basenames);
@@ -60,6 +61,7 @@ function getBasenames(s3) {
     }) ([])) (bucketContents);
 }
 
+// Return a bound function as we prefer the curried notation.
 function selectEntry(s3) {
     return function (basenames) {
         console.log (`names: ${JSON.stringify (basenames)}`);
@@ -95,6 +97,7 @@ const startModeHandlers =
         'AMAZON.YesIntent': function () {
             console.log (`YesIntent: ${JSON.stringify (this.event)}`);
 
+            // todo Rewrite this to call 'Future.map'...
             const basenames = getBasenames.bind (this) (s3);
 
             const selected = Future.chain (selectEntry.bind (this) (s3)) (basenames);
