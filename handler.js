@@ -38,30 +38,30 @@ const escape_HTML = html_str => {
 
 const getRandomInt = max => Math.floor (Math.random () * Math.floor (max));
 
-// Get all the basenames from the S3 bucket. The audio clips are stored using the key: 'clips/<basename>.mp3'
+// Get all the basenames from the S3 bucket as a Future.
+// The audio clips are stored using the key: 'clips/<basename>.mp3'
 // The manifests are stored using the key: 'manifests/<basename>.json'
-// This MUST be declared the old-fashioned way as it is a 'bound' function
-// todo Rewrite this as a function that doesn't know anything about Futures. It would be called as a parameter to Future.map
-function getBasenames(s3) {
-
-    if (this.attributes.basenames) return Future.resolve (this.attributes.basenames);
-
+const getBasenames = s3 => {
     const bucketList = s3Service.listBucket (s3) ('bills-audio-clips', 'manifests');
     const bucketContents = getBucketContents (bucketList);
+    return Future.map(extractBasenames) (bucketContents);
+};
 
-    return Future.map (S.reduce (acc => obj => {
-        const key = obj.Key;
-        const start = key.lastIndexOf ('/');
-        if (start === -1) return acc;
-        const end = key.lastIndexOf ('.json');
-        if (end === -1) return acc;
-        const basename = key.substring (start + 1, end);
+const extractBasenames = S.reduce (acc => obj => {
+    const key = obj.Key;
+    const start = key.lastIndexOf ('/');
+    if (start === -1) return acc;
+    const end = key.lastIndexOf ('.json');
+    if (end === -1) return acc;
+    const basename = key.substring (start + 1, end);
 
-        return S.append (basename) (acc);
-    }) ([])) (bucketContents);
-}
+    return S.append (basename) (acc);
+}) ([]);
 
-// Return a bound function as we prefer the curried notation.
+
+// This function MUST be declared the old fashioned way as it is bound to the 'this' pointer of the handler.
+// Also, have it return a function so it can be curried. Note the returned function is bound to the 'this' pointer
+// of the outer function.
 function selectEntry(s3) {
     return function (basenames) {
         console.log (`names: ${JSON.stringify (basenames)}`);
@@ -75,8 +75,9 @@ function selectEntry(s3) {
 
         const objectBody = s3Service.getObject (s3) ('bills-audio-clips') (`manifests/${basename}.json`);
         return Future.map (body => ({basename: basename, ...JSON.parse (body)})) (objectBody);
-    }.bind(this);
+    }.bind (this);
 }
+
 // -----------------------------------------------------
 
 const states = {
@@ -97,8 +98,7 @@ const startModeHandlers =
         'AMAZON.YesIntent': function () {
             console.log (`YesIntent: ${JSON.stringify (this.event)}`);
 
-            // todo Rewrite this to call 'Future.map'...
-            const basenames = getBasenames.bind (this) (s3);
+            const basenames = this.attributes.basenames ? Future.resolve (this.attributes.basenames) : getBasenames(s3);
 
             const selected = Future.chain (selectEntry.bind (this) (s3)) (basenames);
 
