@@ -18,7 +18,7 @@
     "alexa-sdk": "^1.0.25",
     "ask-sdk": "^2.7.0",
     "assert": "^1.5.0",
-    "aws-sdk": "^2.514.0",
+    "aws-sdk": "^2.814.0",
     "fluture": "^11.0.1",
     "fluture-sanctuary-types": "^4.0.0",
     "pos": "^0.4.2",
